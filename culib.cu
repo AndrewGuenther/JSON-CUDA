@@ -16,9 +16,6 @@ char * parseSpec(char *str_spec) {
    //"int,int,int,int..."
    spec = (char *)malloc((unsigned int)strlen(str_spec) / 4);
 
-   printf("%s\n", str_spec);
-   fflush(stdout);
-
    tok = strtok(str_spec, ", ");
    while (tok != NULL) {
       if (!strcmp(tok, "int"))
@@ -30,14 +27,6 @@ char * parseSpec(char *str_spec) {
    }
 
    return spec;
-}
-
-void parseObjects(char *json, char *spec) {
-   
-}
-
-__global__ void jsonToObj(char *obj, char *spec) {
-
 }
 
 __device__ int cudaStrtoi (char *str, char **end) {
@@ -60,7 +49,6 @@ __device__ int cudaAtoi (char *str) {
   return cudaStrtoi (str, &str);
 }
 
-
 __device__ float cudaAtof (char *str) {
    float f;
 
@@ -78,4 +66,12 @@ __device__ float cudaAtof (char *str) {
    }
 
    return f;
+}
+
+void parseObjects(char *json, char *spec) {
+   
+}
+
+__global__ void jsonToObj(char *obj, char *spec) {
+   
 }
