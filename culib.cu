@@ -10,6 +10,14 @@
 #define TO_DEV cudaMemcpyHostToDevice
 #define TO_HOST cudaMemcpyDeviceToHost
 
+int objSize(char *spec) {
+   int i = 0, size = 0;
+
+   while (spec[i])
+      size += (spec[i++] == INT ? sizeof(int) : sizeof(float));
+
+   return size;
+}
 
 char * parseSpec(char *str_spec) {
    char *tok;
