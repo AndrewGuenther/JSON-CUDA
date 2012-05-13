@@ -1,11 +1,17 @@
 NVFLAGS=-g -G -arch=compute_20 -code=sm_20
-# list .c and .cu source files here
-SRCFILES=culib.cu test.cu
+CFLAGS=-g -G -arch=compute_20 -code=sm_20 -c
+ALL=culib.o test.o
 
-all:	jsonCuda	
+all:	$(ALL) jsonCuda	
 
-jsonCuda: $(SRCFILES) 
-	nvcc $(NVFLAGS) -o jsonCuda $^
+jsonCuda: $(ALL)
+	nvcc $(NVFLAGS) $(ALL) -o jsonCuda 
+
+culib.o: culib.cu culib.h
+	nvcc $(CFLAGS) -o $@ $<
+
+test.o:	test.cu genType.h
+	nvcc $(CFLAGS) -o $@ $<
 
 clean: 
-		rm -f *.o jsonCuda
+	rm -f $(ALL) jsonCuda
