@@ -101,14 +101,16 @@ __global__ void jsonToObj(char *sObj, char *spec, char *obj) {
    }
 }
 
-GenType parseObjects(char *json, char *spec) {
+char * parseObjects(char *json, char *spec, int size) {
    char * dev_json;
    char * dev_obj;
    char * dev_spec;
-   GenType out;
+   char * out;
+
+   out = (char *)malloc(size);
 
    CUDA_SAFE_CALL(cudaMalloc((void **) &dev_json, strlen(json) + 1));
-   CUDA_SAFE_CALL(cudaMalloc((void **) &dev_obj, sizeof(GenType)));
+   CUDA_SAFE_CALL(cudaMalloc((void **) &dev_obj, size));
    CUDA_SAFE_CALL(cudaMalloc((void **) &dev_spec, strlen(spec) + 1));
 
    CUDA_SAFE_CALL(cudaMemcpy(dev_spec, spec, strlen(spec) + 1, TO_DEV));
@@ -116,7 +118,7 @@ GenType parseObjects(char *json, char *spec) {
 
    jsonToObj<<<1, 1>>>(dev_json, dev_spec, dev_obj);
 
-   CUDA_SAFE_CALL(cudaMemcpy((char *) &out, dev_obj, sizeof(GenType), TO_HOST));
+   CUDA_SAFE_CALL(cudaMemcpy(out, dev_obj, size, TO_HOST));
 
    CUDA_SAFE_CALL(cudaFree(dev_json));
    CUDA_SAFE_CALL(cudaFree(dev_obj));

@@ -6,7 +6,7 @@ int main (void) {
    char *spec;
    char str_spec[] = "int, float32, int, int, float32";
    char json[] = "[12, 1.5, 6, 7, -1.5]";
-   GenType out;
+   GenType *out;
 
    printf("Test Init...\n\n");
 
@@ -17,9 +17,9 @@ int main (void) {
    printf("Parsed Spec: %s\n\n", spec);
    printf("Test JSON: %s\n", json);
 
-   out = parseObjects(json, spec);
+   out = (GenType *)parseObjects(json, spec, sizeof(GenType));
 
-   printf("Parsed JSON: %d, %lf, %d, %d, %lf\n", out.i, out.f, out.j, out.k, out.g);
+   printf("Parsed JSON: %d, %lf, %d, %d, %lf\n", out->i, out->f, out->j, out->k, out->g);
 
    return 1;
 }
