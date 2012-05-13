@@ -21,7 +21,7 @@ int main (void) {
 
    out = (GenType *)parseObjects(json, spec, size);
 
-   printf("Parsed JSON: %d, %lf, %d, %d, %lf\n", out->i, out->f, out->j, out->k, out->g);
+   printf("Parsed JSON: %d, %lf, %d, %d, %lf\n", out->a, out->b, out->c, out->d, out->e);
 
    return 1;
 }

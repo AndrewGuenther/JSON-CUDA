@@ -1,6 +1,7 @@
 typedef struct {
-   int i;
-   float f;
-   int j, k;
-   float g;
+int a;
+float b;
+int c;
+int d;
+float e;
 } GenType;
