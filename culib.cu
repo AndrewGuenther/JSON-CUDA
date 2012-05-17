@@ -137,12 +137,6 @@ char * parseObjects(char *json, char *spec, int size) {
       }
    }
 
-   printf("%d\n", numElements);
-   for (int i = 0; i < numElements; i++)
-      printf("%d ", starts[i]);
-   printf("\n");
-   fflush(stdout);
-
    out = (char *)malloc(size * numElements);
 
    CUDA_SAFE_CALL(cudaMalloc((void **) &dev_starts, numElements * sizeof(int)));

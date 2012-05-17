@@ -17,12 +17,14 @@ int main (void) {
    size = objSize(spec);
 
    printf("Parsed Spec: %s\n\n", spec);
-   printf("Test JSON: %s\n", json);
+   printf("Test JSON:   %s\n", json);
 
    out = (GenType *)parseObjects(json, spec, size);
 
+   printf("Parsed JSON: ");
    for (int i = 0; i < 4; i++)
-      printf("Parsed JSON: %d, %lf, %d, %d, %lf\n", out[i].a, out[i].b, out[i].c, out[i].d, out[i].e);
+      printf("[%d, %.2lf, %d, %d, %.2lf] ", out[i].a, out[i].b, out[i].c, out[i].d, out[i].e);
+   printf("\n");
 
    return 1;
 }
