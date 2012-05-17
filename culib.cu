@@ -90,10 +90,20 @@ __device__ float cudaAtof (char *str) {
    return cudaStrtof(str, NULL);
 }
 
-__global__ void jsonToObj(char *sObj, char *spec, char *obj) {
+#define THREADS_PER_BLOCK 512
+#define INITIAL_SIZE 128
+
+__global__ void jsonToObj(char *sObj, char *spec, char *obj, int * starts, int objSize, int numElements) {
    int pos = 0;
    float fres;
    int ires;
+   int offset = blockIdx.x * THREADS_PER_BLOCK + threadIdx.x;
+
+   if (offset > numElements)
+      return;
+
+   obj += offset * objSize;
+   sObj += starts[offset];
 
    for (int i = 0; spec[i] != '\0'; i++) {
       if (spec[i] == INT) {
@@ -113,20 +123,42 @@ char * parseObjects(char *json, char *spec, int size) {
    char * dev_json;
    char * dev_obj;
    char * dev_spec;
+   int * dev_starts;
    char * out;
+   unsigned int numElements = 0;
+   unsigned int * starts;
+   char * pos = json;
 
-   out = (char *)malloc(size);
+   starts = (unsigned int *)malloc(sizeof(int) * INITIAL_SIZE);
+   while (*++pos != '\0') {
+      if (*pos == '[' && *(pos + 1) != '[') {
+         starts[numElements] = pos - json;
+         numElements++;
+      }
+   }
 
+   printf("%d\n", numElements);
+   for (int i = 0; i < numElements; i++)
+      printf("%d ", starts[i]);
+   printf("\n");
+   fflush(stdout);
+
+   out = (char *)malloc(size * numElements);
+
+   CUDA_SAFE_CALL(cudaMalloc((void **) &dev_starts, numElements * sizeof(int)));
    CUDA_SAFE_CALL(cudaMalloc((void **) &dev_json, strlen(json) + 1));
-   CUDA_SAFE_CALL(cudaMalloc((void **) &dev_obj, size));
+   CUDA_SAFE_CALL(cudaMalloc((void **) &dev_obj, size * numElements));
    CUDA_SAFE_CALL(cudaMalloc((void **) &dev_spec, strlen(spec) + 1));
 
+   CUDA_SAFE_CALL(cudaMemcpy(dev_starts, starts, numElements * sizeof(int), TO_DEV));
    CUDA_SAFE_CALL(cudaMemcpy(dev_spec, spec, strlen(spec) + 1, TO_DEV));
    CUDA_SAFE_CALL(cudaMemcpy(dev_json, json, strlen(json) + 1, TO_DEV));
 
-   jsonToObj<<<1, 1>>>(dev_json, dev_spec, dev_obj);
+   dim3 dimBlock(numElements / THREADS_PER_BLOCK + 1);
+   dim3 dimThread(THREADS_PER_BLOCK);
+   jsonToObj<<<dimBlock, dimThread>>>(dev_json, dev_spec, dev_obj, dev_starts, size, numElements);
 
-   CUDA_SAFE_CALL(cudaMemcpy(out, dev_obj, size, TO_HOST));
+   CUDA_SAFE_CALL(cudaMemcpy(out, dev_obj, size * numElements, TO_HOST));
 
    CUDA_SAFE_CALL(cudaFree(dev_json));
    CUDA_SAFE_CALL(cudaFree(dev_obj));
