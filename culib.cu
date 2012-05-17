@@ -55,7 +55,7 @@ __device__ int cudaStrtoi (char *str, char **end) {
       neg = 1;
    }
 
-   while (*str && *str - 48 > 0 && *str - 48 <= 9 && *str != 'e' && *str != '.')
+   while (*str && *str - 48 >= 0 && *str - 48 <= 9 && *str != 'e' && *str != '.')
       i = (i << 3) + (i << 1) + ((*str++) - '0');
 
    *end = str;
