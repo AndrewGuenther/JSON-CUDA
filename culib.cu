@@ -64,6 +64,15 @@ __device__ int cudaStrtoi (char *str, char **end) {
 
 __device__ float cudaStrtof (char *str, char **end) {
    float f;
+   char neg = 0;
+
+   while ((*str - 48 < 0 || *str - 48 > 9) && (*str != '-' && *str != '\0' && *str != '.'))
+      *str++;
+
+   if (*str == '-') {
+      *str++;
+      neg = 1;
+   }
 
    f = cudaStrtoi(str, &str);
 
@@ -79,7 +88,7 @@ __device__ float cudaStrtof (char *str, char **end) {
    }
 
    *end = str;
-   return f;
+   return neg ? -f : f;
 }
 
 __device__ int cudaAtoi (char *str) {
@@ -91,13 +100,12 @@ __device__ float cudaAtof (char *str) {
 }
 
 #define THREADS_PER_BLOCK 512
-#define INITIAL_SIZE 128
+#define INITIAL_SIZE 1024
 
 __global__ void jsonToObj(char *sObj, char *spec, char *obj, int * starts, int objSize, int numElements) {
-   int pos = 0;
    float fres;
    int ires;
-   int offset = blockIdx.x * THREADS_PER_BLOCK + threadIdx.x;
+   int offset = blockIdx.x * blockDim.x + threadIdx.x;
 
    if (offset > numElements)
       return;
@@ -108,13 +116,13 @@ __global__ void jsonToObj(char *sObj, char *spec, char *obj, int * starts, int o
    for (int i = 0; spec[i] != '\0'; i++) {
       if (spec[i] == INT) {
          ires = cudaStrtoi(sObj, &sObj);
-         memcpy((obj + pos), &ires, sizeof(int));
-         pos += sizeof(int);
+         memcpy(obj, &ires, sizeof(int));
+         obj += sizeof(int);
       }
       else {
          fres = cudaStrtof(sObj, &sObj);
-         memcpy((obj + pos), &fres, sizeof(float));
-         pos += sizeof(float);
+         memcpy(obj, &fres, sizeof(float));
+         obj += sizeof(float);
       }
    }
 }
@@ -127,6 +135,7 @@ char * parseObjects(char *json, char *spec, int size) {
    char * out;
    unsigned int numElements = 0;
    unsigned int * starts;
+   unsigned int startsSize = INITIAL_SIZE;
    char * pos = json;
 
    starts = (unsigned int *)malloc(sizeof(int) * INITIAL_SIZE);
@@ -134,10 +143,10 @@ char * parseObjects(char *json, char *spec, int size) {
       if (*pos == '[' && *(pos + 1) != '[') {
          starts[numElements] = pos - json;
          numElements++;
+         if (numElements >= startsSize)
+            starts = (unsigned int *)realloc(starts, (startsSize += INITIAL_SIZE));
       }
    }
-
-   out = (char *)malloc(size * numElements);
 
    CUDA_SAFE_CALL(cudaMalloc((void **) &dev_starts, numElements * sizeof(int)));
    CUDA_SAFE_CALL(cudaMalloc((void **) &dev_json, strlen(json) + 1));
@@ -151,6 +160,7 @@ char * parseObjects(char *json, char *spec, int size) {
    dim3 dimBlock(numElements / THREADS_PER_BLOCK + 1);
    dim3 dimThread(THREADS_PER_BLOCK);
    jsonToObj<<<dimBlock, dimThread>>>(dev_json, dev_spec, dev_obj, dev_starts, size, numElements);
+   out = (char *)malloc(size * numElements);
 
    CUDA_SAFE_CALL(cudaMemcpy(out, dev_obj, size * numElements, TO_HOST));
 

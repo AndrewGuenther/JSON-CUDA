@@ -1,30 +1,44 @@
 #include <stdio.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include "culib.h"
 
-int main (void) {
+int main (int argc, char *argv[]) {
    char *spec;
    char str_spec[] = "int, float32, int, int, float32";
-   char json[] = "[[[12, 1.5, 6, 7, -1.5],[1, 2.1, 3, 4, 5.0]],[[6, 7.0, 8, 9, 10.0],[11, 12.0, 13, 14, 15.0]]]";
+   char *json;
    GenType *out;
    int size;
+   int in;
+   struct stat st;
 
-   printf("Test Init...\n\n");
+   in = open(argv[1], O_RDONLY);
+   stat(argv[1], &st);
 
-   printf("Test Spec: %s\n", str_spec);
+   json = (char *)malloc(st.st_size * sizeof(char));
+   read(in, json, st.st_size);
+
+//   printf("Test Init...\n\n");
+
+//   printf("Test Spec: %s\n", str_spec);
 
    spec = parseSpec(str_spec);
    size = objSize(spec);
 
-   printf("Parsed Spec: %s\n\n", spec);
-   printf("Test JSON:   %s\n", json);
+//   printf("Parsed Spec: %s\n\n", spec);
+//   printf("Test JSON:   %s\n", json);
 
    out = (GenType *)parseObjects(json, spec, size);
 
-   printf("Parsed JSON: ");
-   for (int i = 0; i < 4; i++)
-      printf("[%d, %.2lf, %d, %d, %.2lf] ", out[i].a, out[i].b, out[i].c, out[i].d, out[i].e);
-   printf("\n");
+//   printf("Parsed JSON: ");
+   int numElems = atoi(argv[2]);
+   printf("[");
+   for (int i = 0; i < numElems; i++)
+      printf("[%d %.2lf %d %d %.2lf ]\n", out[i].a, out[i].b, out[i].c, out[i].d, out[i].e);
+   printf("]");
 
    return 1;
 }
