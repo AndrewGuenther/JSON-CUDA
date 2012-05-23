@@ -137,6 +137,12 @@ char * parseObjects(char *json, char *spec, int size) {
    unsigned int * starts;
    unsigned int startsSize = INITIAL_SIZE;
    char * pos = json;
+   float time, time1;
+   cudaEvent_t start, stop, start1, stop1;
+
+   CUDA_SAFE_CALL( cudaEventCreate(&start1) );
+   CUDA_SAFE_CALL( cudaEventCreate(&stop1) );
+   CUDA_SAFE_CALL( cudaEventRecord(start1, 0) );
 
    starts = (unsigned int *)malloc(sizeof(int) * INITIAL_SIZE);
    while (*++pos != '\0') {
@@ -161,7 +167,23 @@ char * parseObjects(char *json, char *spec, int size) {
 
    dim3 dimBlock(numElements / THREADS_PER_BLOCK + 1);
    dim3 dimThread(THREADS_PER_BLOCK);
+
+   CUDA_SAFE_CALL( cudaEventRecord(stop1, 0) );
+   CUDA_SAFE_CALL( cudaEventSynchronize(stop1) );
+   CUDA_SAFE_CALL( cudaEventElapsedTime(&time1, start1, stop1) );
+   CUDA_SAFE_CALL( cudaEventCreate(&start) );
+   CUDA_SAFE_CALL( cudaEventCreate(&stop) );
+   CUDA_SAFE_CALL( cudaEventRecord(start, 0) );
+
    jsonToObj<<<dimBlock, dimThread>>>(dev_json, dev_spec, dev_obj, dev_starts, size, numElements);
+
+   CUDA_SAFE_CALL( cudaEventRecord(stop, 0) );
+   CUDA_SAFE_CALL( cudaEventSynchronize(stop) );
+   CUDA_SAFE_CALL( cudaEventElapsedTime(&time, start, stop) );
+
+   printf("CPU setup time:  %3.1f ms \n", time1);
+   printf("Time to generate:  %3.1f ms \n", time);
+
    out = (char *)malloc(size * numElements);
 
    CUDA_SAFE_CALL(cudaMemcpy(out, dev_obj, size * numElements, TO_HOST));

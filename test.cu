@@ -21,24 +21,17 @@ int main (int argc, char *argv[]) {
    json = (char *)malloc(st.st_size * sizeof(char));
    read(in, json, st.st_size);
 
-//   printf("Test Init...\n\n");
-
-//   printf("Test Spec: %s\n", str_spec);
-
    spec = parseSpec(str_spec);
    size = objSize(spec);
 
-//   printf("Parsed Spec: %s\n\n", spec);
-//   printf("Test JSON:   %s\n", json);
-
    out = (GenType *)parseObjects(json, spec, size);
 
-//   printf("Parsed JSON: ");
+   FILE *fout = fopen("/tmp/test.out", "w");
    int numElems = atoi(argv[2]);
-   printf("[");
+   fprintf(fout, "[");
    for (int i = 0; i < numElems; i++)
-      printf("[%d %.2lf %d %d %.2lf ]\n", out[i].a, out[i].b, out[i].c, out[i].d, out[i].e);
-   printf("]");
+      fprintf(fout, "[%d %.2lf %d %d %.2lf ]\n", out[i].a, out[i].b, out[i].c, out[i].d, out[i].e);
+   fprintf(fout, "]");
 
    return 1;
 }
