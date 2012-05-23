@@ -66,4 +66,4 @@ for i in 1..opts[:num_elements]
 end
 test << ']'
 
-File.open('test.in', 'w').write(test)
+File.open('/tmp/test.in', 'w').write(test)

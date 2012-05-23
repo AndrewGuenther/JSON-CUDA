@@ -1,5 +1,5 @@
 #!/bin/bash
 
 ruby generate.rb -n $1
-./jsonCuda test.in $1 > test.out
-diff test.in test.out
+./jsonCuda /tmp/test.in $1 > /tmp/test.out
+diff /tmp/test.in /tmp/test.out
