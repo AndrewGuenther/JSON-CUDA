@@ -105,9 +105,9 @@ __device__ float cudaAtof (char *str) {
 __global__ void jsonToObj(char *sObj, char *spec, char *obj, int * starts, int objSize, int numElements) {
    float fres;
    int ires;
-   int offset = blockIdx.x * blockDim.x + threadIdx.x;
+   unsigned int offset = blockIdx.x * blockDim.x + threadIdx.x;
 
-   if (offset > numElements)
+   if (offset >= numElements)
       return;
 
    obj += offset * objSize;
@@ -143,8 +143,10 @@ char * parseObjects(char *json, char *spec, int size) {
       if (*pos == '[' && *(pos + 1) != '[') {
          starts[numElements] = pos - json;
          numElements++;
-         if (numElements >= startsSize)
-            starts = (unsigned int *)realloc(starts, (startsSize += INITIAL_SIZE));
+         if (numElements >= startsSize) {
+            startsSize += INITIAL_SIZE;
+            starts = (unsigned int *)realloc(starts, sizeof(int) * startsSize);
+         }
       }
    }
 
