@@ -10,7 +10,7 @@ int main (int argc, char *argv[]) {
    char *spec;
    char str_spec[] = "int, float32, int, int, float32";
    char *json;
-   GenType *out;
+   GenType **out;
    int size;
    int in;
    struct stat st;
@@ -24,13 +24,15 @@ int main (int argc, char *argv[]) {
    spec = parseSpec(str_spec);
    size = objSize(spec);
 
-   out = (GenType *)parseObjects(json, spec, size);
+   out = (GenType **)parseObjects(json, spec, size);
 
    FILE *fout = fopen("/tmp/test.out", "w");
    int numElems = atoi(argv[2]);
+   int dims = atoi(argv[3]);
    fprintf(fout, "[");
-   for (int i = 0; i < numElems; i++)
-      fprintf(fout, "[%d %.2lf %d %d %.2lf ]\n", out[i].a, out[i].b, out[i].c, out[i].d, out[i].e);
+   for (int i = 0; i < dims; i++)
+      for (int j = 0; j < (numElems / dims); j++)
+         fprintf(fout, "[%d %.2lf %d %d %.2lf ]\n", out[i][j].a, out[i][j].b, out[i][j].c, out[i][j].d, out[i][j].e);
    fprintf(fout, "]");
 
    return 1;
