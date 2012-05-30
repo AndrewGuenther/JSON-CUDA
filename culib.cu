@@ -135,7 +135,7 @@ char * parseArray(unsigned int *dev_starts, int numElements) {
    char * out;
 
    CUDA_SAFE_CALL(cudaMalloc((void **) &dev_obj, size * numElements));
-   
+
    dim3 dimBlock(numElements / THREADS_PER_BLOCK + 1);
    dim3 dimThread(THREADS_PER_BLOCK);
 
@@ -148,16 +148,17 @@ char * parseArray(unsigned int *dev_starts, int numElements) {
    return out;
 }
 
-char * findArrays(char *json) {
+char * findArrays(char *json, char *pos) {
    unsigned int *starts, *dev_starts;
-   char *out, *pos = json;
+   char *out;
    unsigned int numElements = 0;
    unsigned int startsSize = INITIAL_SIZE;
 
    starts = (unsigned int *)malloc(sizeof(int) * INITIAL_SIZE);
-   while (*++pos != '\0') {
+
+   do {
       if (*pos == '[') {
-         if (*(pos + 1) != '[') {
+         if (*(pos + 2) != '[') {
             starts[numElements] = pos - json;
             numElements++;
             if (numElements >= startsSize) {
@@ -166,10 +167,11 @@ char * findArrays(char *json) {
             }
          }
          else {
-            
+//            findArrays(json, pos);
+            printf("dim\n"); 
          }
       }
-   }
+   } while (*++pos != '\0');
 
    CUDA_SAFE_CALL(cudaMalloc((void **) &dev_starts, numElements * size));
    CUDA_SAFE_CALL(cudaMemcpy(dev_starts, starts, numElements * sizeof(int), TO_DEV));
@@ -183,6 +185,7 @@ char * findArrays(char *json) {
 
 char * parseObjects(char *json, char *spec, int objSize) {
    char *out;
+   char *pos = json;
 
    size = objSize;
 
@@ -192,8 +195,8 @@ char * parseObjects(char *json, char *spec, int objSize) {
    CUDA_SAFE_CALL(cudaMemcpy(dev_spec, spec, strlen(spec) + 1, TO_DEV));
    CUDA_SAFE_CALL(cudaMemcpy(dev_json, json, strlen(json) + 1, TO_DEV));
 
-   out = findArrays(json);
-   
+   out = findArrays(json, pos);
+
    CUDA_SAFE_CALL(cudaFree(dev_spec));
    CUDA_SAFE_CALL(cudaFree(dev_json));
 
