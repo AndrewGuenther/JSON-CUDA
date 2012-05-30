@@ -11,12 +11,12 @@
 #define TO_HOST cudaMemcpyDeviceToHost
 
 int objSize(char *spec) {
-   int i = 0, size = 0;
+   int i = 0, objSize = 0;
 
    while (spec[i])
-      size += (spec[i++] == INT ? sizeof(int) : sizeof(float));
+      objSize += (spec[i++] == INT ? sizeof(int) : sizeof(float));
 
-   return size;
+   return objSize;
 }
 
 char * parseSpec(char *str_spec) {
@@ -102,7 +102,7 @@ __device__ float cudaAtof (char *str) {
 #define THREADS_PER_BLOCK 512
 #define INITIAL_SIZE 1024
 
-__global__ void jsonToObj(char *sObj, char *spec, char *obj, int * starts, int objSize, int numElements) {
+__global__ void jsonToObj(char *sObj, char *spec, char *obj, unsigned int * starts, int objSize, int numElements) {
    float fres;
    int ires;
    unsigned int offset = blockIdx.x * blockDim.x + threadIdx.x;
@@ -127,69 +127,75 @@ __global__ void jsonToObj(char *sObj, char *spec, char *obj, int * starts, int o
    }
 }
 
-char * parseObjects(char *json, char *spec, int size) {
-   char * dev_json;
+char *dev_json, *dev_spec;
+int size;
+
+char * parseArray(unsigned int *dev_starts, int numElements) {
    char * dev_obj;
-   char * dev_spec;
-   int * dev_starts;
    char * out;
-   unsigned int numElements = 0;
-   unsigned int * starts;
-   unsigned int startsSize = INITIAL_SIZE;
-   char * pos = json;
-   float time, time1;
-   cudaEvent_t start, stop, start1, stop1;
 
-   CUDA_SAFE_CALL( cudaEventCreate(&start1) );
-   CUDA_SAFE_CALL( cudaEventCreate(&stop1) );
-   CUDA_SAFE_CALL( cudaEventRecord(start1, 0) );
-
-   starts = (unsigned int *)malloc(sizeof(int) * INITIAL_SIZE);
-   while (*++pos != '\0') {
-      if (*pos == '[' && *(pos + 1) != '[') {
-         starts[numElements] = pos - json;
-         numElements++;
-         if (numElements >= startsSize) {
-            startsSize += INITIAL_SIZE;
-            starts = (unsigned int *)realloc(starts, sizeof(int) * startsSize);
-         }
-      }
-   }
-
-   CUDA_SAFE_CALL(cudaMalloc((void **) &dev_starts, numElements * sizeof(int)));
-   CUDA_SAFE_CALL(cudaMalloc((void **) &dev_json, strlen(json) + 1));
    CUDA_SAFE_CALL(cudaMalloc((void **) &dev_obj, size * numElements));
-   CUDA_SAFE_CALL(cudaMalloc((void **) &dev_spec, strlen(spec) + 1));
-
-   CUDA_SAFE_CALL(cudaMemcpy(dev_starts, starts, numElements * sizeof(int), TO_DEV));
-   CUDA_SAFE_CALL(cudaMemcpy(dev_spec, spec, strlen(spec) + 1, TO_DEV));
-   CUDA_SAFE_CALL(cudaMemcpy(dev_json, json, strlen(json) + 1, TO_DEV));
-
+   
    dim3 dimBlock(numElements / THREADS_PER_BLOCK + 1);
    dim3 dimThread(THREADS_PER_BLOCK);
 
-   CUDA_SAFE_CALL( cudaEventRecord(stop1, 0) );
-   CUDA_SAFE_CALL( cudaEventSynchronize(stop1) );
-   CUDA_SAFE_CALL( cudaEventElapsedTime(&time1, start1, stop1) );
-   CUDA_SAFE_CALL( cudaEventCreate(&start) );
-   CUDA_SAFE_CALL( cudaEventCreate(&stop) );
-   CUDA_SAFE_CALL( cudaEventRecord(start, 0) );
-
    jsonToObj<<<dimBlock, dimThread>>>(dev_json, dev_spec, dev_obj, dev_starts, size, numElements);
-
-   CUDA_SAFE_CALL( cudaEventRecord(stop, 0) );
-   CUDA_SAFE_CALL( cudaEventSynchronize(stop) );
-   CUDA_SAFE_CALL( cudaEventElapsedTime(&time, start, stop) );
-
-   printf("CPU setup time:  %3.1f ms \n", time1);
-   printf("Time to generate:  %3.1f ms \n", time);
 
    out = (char *)malloc(size * numElements);
 
    CUDA_SAFE_CALL(cudaMemcpy(out, dev_obj, size * numElements, TO_HOST));
 
+   return out;
+}
+
+char * findArrays(char *json) {
+   unsigned int *starts, *dev_starts;
+   char *out, *pos = json;
+   unsigned int numElements = 0;
+   unsigned int startsSize = INITIAL_SIZE;
+
+   starts = (unsigned int *)malloc(sizeof(int) * INITIAL_SIZE);
+   while (*++pos != '\0') {
+      if (*pos == '[') {
+         if (*(pos + 1) != '[') {
+            starts[numElements] = pos - json;
+            numElements++;
+            if (numElements >= startsSize) {
+               startsSize += INITIAL_SIZE;
+               starts = (unsigned int *)realloc(starts, (sizeof(int) * startsSize));
+            }
+         }
+         else {
+            
+         }
+      }
+   }
+
+   CUDA_SAFE_CALL(cudaMalloc((void **) &dev_starts, numElements * size));
+   CUDA_SAFE_CALL(cudaMemcpy(dev_starts, starts, numElements * sizeof(int), TO_DEV));
+
+   out = parseArray(dev_starts, numElements);
+
+   CUDA_SAFE_CALL(cudaFree(dev_starts));
+
+   return out;
+}
+
+char * parseObjects(char *json, char *spec, int objSize) {
+   char *out;
+
+   size = objSize;
+
+   CUDA_SAFE_CALL(cudaMalloc((void **) &dev_json, strlen(json) + 1));
+   CUDA_SAFE_CALL(cudaMalloc((void **) &dev_spec, strlen(spec) + 1)); //Make this constant mem
+
+   CUDA_SAFE_CALL(cudaMemcpy(dev_spec, spec, strlen(spec) + 1, TO_DEV));
+   CUDA_SAFE_CALL(cudaMemcpy(dev_json, json, strlen(json) + 1, TO_DEV));
+
+   out = findArrays(json);
+   
+   CUDA_SAFE_CALL(cudaFree(dev_spec));
    CUDA_SAFE_CALL(cudaFree(dev_json));
-   CUDA_SAFE_CALL(cudaFree(dev_obj));
 
    return out;
 }
