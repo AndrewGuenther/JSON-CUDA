@@ -1,5 +1,6 @@
 #include <string.h>
 #include <stdio.h>
+#include <regex.h>
 
 #include "genType.h"
 #include "cutil.h"
@@ -156,7 +157,7 @@ char * findArrays(char *json, char *pos, char **newpos) {
    unsigned int *starts, *dev_starts;
    char *out;
    char **arrs;
-   int i = 0;
+   int i = 0, balance = 0;
    char parsing = 1;
    unsigned int numElements = 0;
    unsigned int startsSize = INITIAL_SIZE;
@@ -168,8 +169,10 @@ char * findArrays(char *json, char *pos, char **newpos) {
    arrs = (char **)malloc(5 * sizeof(char **));
 
    do {
+      *pos++;
       if (*pos == '[') {
-         if (*(pos + 2) != '[') {
+         balance++;
+         if (*(pos + 1) != '[') {
             starts[numElements] = pos - json;
             numElements++;
             if (numElements >= startsSize) {
@@ -178,13 +181,16 @@ char * findArrays(char *json, char *pos, char **newpos) {
             }
          }
          else {
-            arrs[i] = findArrays(json, pos + 1, &pos);
+            printf("'%c%c': %x\n", *pos, *(pos + 1), pos);
+            arrs[i] = findArrays(json, pos, &pos);
             i++;
-            printf("%c\n", *pos);
+            printf("'%c%c': %x\n", *(pos - 1), *pos, pos);
             parsing = 0; 
          }
       }
-   } while (*++pos != '\0');
+      else if (*pos == ']')
+         balance--;
+   } while (*pos != '\0' && balance >= 0);
 
    *newpos = pos;
    depth--;
