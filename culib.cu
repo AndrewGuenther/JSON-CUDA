@@ -101,6 +101,7 @@ __device__ float cudaAtof (char *str) {
 
 #define THREADS_PER_BLOCK 512
 #define INITIAL_SIZE 1024
+#define ARRS_SIZE 1024
 
 __global__ void jsonToObj(char *sObj, char *spec, char *obj, unsigned int * starts, int objSize, int numElements) {
    float fres;
@@ -153,16 +154,14 @@ int depth;
 char * setupArray(char *json, char *pos, char **newpos) {
    unsigned int *starts, *dev_starts;
    char *out;
-   char **arrs;
-   int i = 0, balance = 0;
-   char parsing = 1;
+   int balance = 0;
    unsigned int numElements = 0;
    unsigned int startsSize = INITIAL_SIZE;  
-   GenType * debug_out;
+//   GenType * debug_out;
    
    starts = (unsigned int *)malloc(sizeof(int) * INITIAL_SIZE);
 
-   printf("setupArray: ");
+//   printf("setupArray: ");
    do {
       if (*pos == '[') {
          balance++;
@@ -175,18 +174,18 @@ char * setupArray(char *json, char *pos, char **newpos) {
       }
       else if (*pos == ']')
          balance--;
-      printf("%c", *pos);
+//      printf("%c", *pos);
       fflush(stdout);
    } while (*++pos != '\0' && balance >= 0);
 
-   printf("\n");
+//   printf("\n");
    *newpos = pos - 1;
 
    CUDA_SAFE_CALL(cudaMalloc((void **) &dev_starts, numElements * size));
    CUDA_SAFE_CALL(cudaMemcpy(dev_starts, starts, numElements * sizeof(int), TO_DEV));
 
    out = parseArray(dev_starts, numElements);
-   debug_out = (GenType *)out;
+//   debug_out = (GenType *)out;
 //   for (int i = 0; i < numElements; i++)
 //      printf("%d, %.2lf, %d, %d, %.2lf\n", debug_out[i].a, debug_out[i].b, debug_out[i].c, debug_out[i].d, debug_out[i].e);
 
@@ -196,24 +195,23 @@ char * setupArray(char *json, char *pos, char **newpos) {
 }
 
 char * findArrays(char *json, char *pos, char **newpos) {
-   unsigned int *starts, *dev_starts;
    char *out;
    char **arrs;
+   unsigned int arrs_size = ARRS_SIZE;
    int i = 0, balance = 0;
-   char parsed = 1;
-   unsigned int numElements = 0;
-   unsigned int startsSize = INITIAL_SIZE;
+   char parsed = 0;
 
-   arrs = (char **)malloc(5 * sizeof(char **));
+   arrs = (char **)malloc(arrs_size * sizeof(char **));
 
    pos++;
-   printf("Find arrays %d: ", depth);
+//   printf("Find arrays %d: ", depth);
    if (*pos == '[') {
       if(*(pos + 1) != '[') {
   
 //         printf("%c", *pos);
-         printf("\n");
+//         printf("\n");
          out = setupArray(json, pos, &pos);
+//         printf("%x\n", out);
 //         printf("%c", *pos);
          parsed = 1;
       }
@@ -221,27 +219,41 @@ char * findArrays(char *json, char *pos, char **newpos) {
          do {
             if (*pos == '[') {
                balance++;
-               printf("\n");
+//               printf("\n");
                depth++;
+//               printf("down\n");
                arrs[i] = findArrays(json, pos, &pos);
+               i++;
+               if (i >= arrs_size) {
+                  printf("resizing\n");
+                  arrs_size += ARRS_SIZE;
+                  arrs = (char **)realloc(arrs, (arrs_size * sizeof(char **)));
+               }
+//               printf("up\n");
                depth--;
             }
             if (*pos == ']')
                balance--;
-            i++;
-            printf("%c", *pos);
+//            printf("%c", *pos);
             fflush(stdout);
          } while (*++pos != '\0' && balance >= 0);
       }
    }
 
-   printf("\n");
+//   printf("\n");
    *newpos = pos;
+
 
    if (parsed)
       return out;
-   else
+   else {
+//      printf("%x: ", arrs);
+//      for (int j = 0; j < i; j++)
+//         printf("%x, ", arrs[j]);
+//      printf("\n");
+
       return (char *)arrs;
+   }
 }
 
 char * parseObjects(char *json, char *spec, int objSize) {

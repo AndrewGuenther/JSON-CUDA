@@ -5,6 +5,7 @@
 #include <fcntl.h>
 
 #include "culib.h"
+#include "dims.h"
 
 int main (int argc, char *argv[]) {
    char *spec;
@@ -27,22 +28,33 @@ int main (int argc, char *argv[]) {
    out = (GenType ***)parseObjects(json, spec, size);
 
    FILE *fout = fopen("/tmp/test.out", "w");
+
+//   printf("%x\n", out);   
+   
+   
 //   int numElems = atoi(argv[2]);
 //   int dims = atoi(argv[3]);
    int i,j,k;
    i = j = k = 0;
-   fprintf(fout, "[\n");
-//   for (i = 0; i < 3; i++) {
-      fprintf(fout, "   [\n");
-//      for (j = 0; j < 2; j++) {
-         fprintf(fout, "      [\n");
-//         for (k = 0; k < 3; k++)
-           fprintf(fout, "         [%d, %.2lf, %d, %d, %.2lf],\n", out[i][j][k].a, out[i][j][k].b, out[i][j][k].c, out[i][j][k].d, out[i][j][k].e);
-         fprintf(fout, "      ]\n");
-//      }
-      fprintf(fout, "   ]\n");
-//   }
-   fprintf(fout, "]\n");
+   fprintf(fout, "[");
+   for (i = 0; i < C; i++) {
+      fprintf(fout, "[");
+      for (j = 0; j < B; j++) {
+         fprintf(fout, "[");
+         for (k = 0; k < A; k++) {
+           fprintf(fout, "[%d,%.1lf,%d,%d,%.1lf]", out[i][j][k].a, out[i][j][k].b, out[i][j][k].c, out[i][j][k].d, out[i][j][k].e);
+           if (k < A - 1) 
+             fprintf(fout, ",");
+         }
+         fprintf(fout, "]");
+         if (j < B - 1) 
+           fprintf(fout, ",");
+      }
+      fprintf(fout, "]");
+      if (i < C - 1) 
+         fprintf(fout, ",");
+   }
+   fprintf(fout, "]");
 
    return 1;
 }
