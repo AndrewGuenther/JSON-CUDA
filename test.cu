@@ -34,12 +34,12 @@ int main (int argc, char *argv[]) {
    fprintf(fout, "[\n");
 //   for (i = 0; i < 3; i++) {
       fprintf(fout, "   [\n");
-      for (j = 0; j < 2; j++) {
+//      for (j = 0; j < 2; j++) {
          fprintf(fout, "      [\n");
-         for (k = 0; k < 3; k++)
+//         for (k = 0; k < 3; k++)
            fprintf(fout, "         [%d, %.2lf, %d, %d, %.2lf],\n", out[i][j][k].a, out[i][j][k].b, out[i][j][k].c, out[i][j][k].d, out[i][j][k].e);
          fprintf(fout, "      ]\n");
-      }
+//      }
       fprintf(fout, "   ]\n");
 //   }
    fprintf(fout, "]\n");
