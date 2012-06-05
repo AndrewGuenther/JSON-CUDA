@@ -1,12 +1,12 @@
-out = [1, 2.3, 4, 5, 6.7]
+out = "[1,2.3,4,5,6.7]"
 
 for x in ARGV
-   out = [out] * x.to_i
+   out = "[#{(out + ",") * (x.to_i - 1) + out}]"
    end
 
 #puts out.inspect
 f = File.open("/tmp/test.in", "w")
-f.write(out.to_s.gsub(/\s+/, ""))
+f.write(out)
 f.close
 
 alpha = 65

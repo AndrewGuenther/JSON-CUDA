@@ -1,5 +1,8 @@
 #!/bin/bash
 
-ruby generate.rb -n $1
-./jsonCuda /tmp/test.in $1
-diff /tmp/test.in /tmp/test.out
+echo "Generating JSON..."
+ruby json.rb $1 $2 $3 $4 $5
+echo "Parsing..."
+time ./jsonCuda /tmp/test.in $1 $2 $3 $4 $5
+echo "Diffing..."
+diff /tmp/test.in /tmp/test.out -q

@@ -5,9 +5,10 @@
 #include <fcntl.h>
 
 #include "culib.h"
+#include "dims.h"
 #include "printOut.h"
 
-//void print(char *raw, FILE *fout, int A, int B, int C, int D, int E);
+//void print (char *out, FILE *fout);
 
 int main (int argc, char *argv[]) {
    char *spec;
@@ -30,11 +31,11 @@ int main (int argc, char *argv[]) {
    out = parseObjects(json, spec, size);
 //   printf("%x\n", out);
 
-   FILE *fout = fopen("/tmp/test.out", "w");
+//   FILE *fout = fopen("/tmp/test.out", "w");
 
-   print(out, fout, atoi(argv[2]), atoi(argv[3]), atoi(argv[4]), atoi(argv[5]), atoi(argv[6]));
+//   print(out, fout, atoi());
 
-   fclose(fout);
+//   fclose(fout);
    free(json);
    close(in);
 

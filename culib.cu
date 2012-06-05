@@ -181,6 +181,7 @@ char * setupArray(char *json, char *pos, char **newpos) {
 //   printf("\n");
    *newpos = pos - 1;
 
+//   printf("\nout: %s\n", pos);
    CUDA_SAFE_CALL(cudaMalloc((void **) &dev_starts, numElements * size));
    CUDA_SAFE_CALL(cudaMemcpy(dev_starts, starts, numElements * sizeof(int), TO_DEV));
 
@@ -204,18 +205,21 @@ char * findArrays(char *json, char *pos, char **newpos) {
    arrs = (char **)malloc(arrs_size * sizeof(char **));
 
    pos++;
-//   printf("Find arrays %d: ", depth);
+   //printf("Find arrays %d: ", depth);
    if (*pos == '[') {
+      balance++;
       if(*(pos + 1) != '[') {
   
 //         printf("%c", *pos);
 //         printf("\n");
+         //printf("\nin %d: %s\n", balance, pos);
          out = setupArray(json, pos, &pos);
 //         printf("%x\n", out);
 //         printf("%c", *pos);
          parsed = 1;
       }
       else {
+         balance--;
          do {
             if (*pos == '[') {
                balance++;
@@ -225,7 +229,7 @@ char * findArrays(char *json, char *pos, char **newpos) {
                arrs[i] = findArrays(json, pos, &pos);
                i++;
                if (i >= arrs_size) {
-                  printf("resizing\n");
+                  //printf("resizing\n");
                   arrs_size += ARRS_SIZE;
                   arrs = (char **)realloc(arrs, (arrs_size * sizeof(char **)));
                }
