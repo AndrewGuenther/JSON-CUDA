@@ -13,10 +13,10 @@ jsonCuda: $(ALL)
 culib.o: culib.cu culib.h
 	nvcc $(CFLAGS) -o $@ $<
 
-test.o:	test.cu genType.h printOut.h
+test.o:	test.cu genType.h out.h
 	nvcc $(CFLAGS) -o $@ $<
 
-out.o:	out.cu printOut.h
+out.o:	out.cu out.h
 	nvcc $(CFLAGS) -o $@ $<
 
 clean: 
