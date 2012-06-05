@@ -205,9 +205,8 @@ char * findArrays(char *json, char *pos, char **newpos) {
    arrs = (char **)malloc(arrs_size * sizeof(char **));
 
    pos++;
-   //printf("Find arrays %d: ", depth);
    if (*pos == '[') {
-      balance++;
+//      balance++;
       if(*(pos + 1) != '[') {
   
 //         printf("%c", *pos);
@@ -219,22 +218,17 @@ char * findArrays(char *json, char *pos, char **newpos) {
          parsed = 1;
       }
       else {
-         balance--;
+//         balance--;
          do {
             if (*pos == '[') {
                balance++;
 //               printf("\n");
-               depth++;
-//               printf("down\n");
                arrs[i] = findArrays(json, pos, &pos);
                i++;
                if (i >= arrs_size) {
-                  //printf("resizing\n");
                   arrs_size += ARRS_SIZE;
                   arrs = (char **)realloc(arrs, (arrs_size * sizeof(char **)));
                }
-//               printf("up\n");
-               depth--;
             }
             if (*pos == ']')
                balance--;
