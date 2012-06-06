@@ -10,6 +10,10 @@
 #define TO_DEV cudaMemcpyHostToDevice
 #define TO_HOST cudaMemcpyDeviceToHost
 
+#define THREADS_PER_BLOCK 512
+#define INITIAL_SIZE 1024
+#define ARRS_SIZE 1024
+
 int objSize(char *spec) {
    int i = 0, objSize = 0;
 
@@ -99,9 +103,7 @@ __device__ float cudaAtof (char *str) {
    return cudaStrtof(str, NULL);
 }
 
-#define THREADS_PER_BLOCK 512
-#define INITIAL_SIZE 1024
-#define ARRS_SIZE 1024
+
 
 __global__ void jsonToObj(char *sObj, char *spec, char *obj, unsigned int * starts, int objSize, int numElements) {
    float fres;
@@ -206,9 +208,7 @@ char * findArrays(char *json, char *pos, char **newpos) {
          do {
             if (*pos == '[') {
                balance++;
-//               printf("down\n");
                arrs[i] = findArrays(json, pos, &pos);
-//               printf("%d: %s\n", balance, pos);
                i++;
                if (i >= arrs_size) {
                   arrs_size += ARRS_SIZE;
@@ -222,7 +222,6 @@ char * findArrays(char *json, char *pos, char **newpos) {
    }
 
    *newpos = pos;
-
 
    if (parsed)
       return out;
