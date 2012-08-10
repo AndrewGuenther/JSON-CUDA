@@ -1,3 +1,4 @@
 *.o
 *.old
 jsonCuda
+bench.sh
